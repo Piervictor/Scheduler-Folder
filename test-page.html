@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Page Load</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        .success { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Page Load Test</h1>
+    <div id="status">Loading...</div>
+    
+    <script>
+        window.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('status').innerHTML = '<span class="success">✓ Page Loaded Successfully!</span>';
+            console.log('Page loaded at:', new Date().toISOString());
+        });
+        
+        window.addEventListener('load', function() {
+            console.log('All resources loaded');
+        });
+        
+        window.onerror = function(msg, url, line, col, error) {
+            document.getElementById('status').innerHTML = '<span class="error">✗ Error: ' + msg + '</span>';
+            console.error('Error:', msg, 'at', url, line + ':' + col);
+            return false;
+        };
+    </script>
+</body>
+</html>

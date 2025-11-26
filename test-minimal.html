@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test</title>
+</head>
+<body style="padding: 40px; font-family: Arial;">
+    <h1 style="color: green;">✓ If you see this, the browser works!</h1>
+    <p>File location: <code>C:\Users\admin\Documents\Scheduler Folder\test-minimal.html</code></p>
+    <p>Current time: <span id="time"></span></p>
+    <hr>
+    <h2>Next: Try opening index.html</h2>
+    <script>
+        document.getElementById('time').textContent = new Date().toLocaleString();
+        alert('Browser is working! Click OK to continue.');
+    </script>
+</body>
+</html>

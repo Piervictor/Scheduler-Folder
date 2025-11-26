@@ -1,0 +1,379 @@
+/* ==========================================================================
+   Congregation Volunteer Scheduler — Comprehensive Stylesheet
+   - Responsive layout
+   - Professional accessible palette
+   - Navigation, cards, forms, modals, tabs, time-slot grid
+   - Print-friendly rules for reports
+   ========================================================================== */
+
+/* -------------------------
+   Theme variables (easy to override)
+   ------------------------- */
+:root{
+  /* Colors */
+  --bg: #F5F7FB;
+  --surface: #FFFFFF;
+  --muted: #6B7280;
+  --text: #0F1724;
+  --primary: #0B4DA7;       /* deep blue */
+  --primary-600: #083C85;
+  --accent: #10B981;        /* green */
+  --danger: #EF4444;
+  --info: #06B6D4;
+  --glass: rgba(8,77,167,0.06);
+
+  /* Neutrals */
+  --border: #E6EEF7;
+  --panel-shadow: 0 8px 30px rgba(12,18,28,0.06);
+
+  /* Typography */
+  --font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  --base-size: 16px;
+  --radius: 10px;
+
+  /* Spacing scale */
+  --space-xs: 6px;
+  --space-sm: 10px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 40px;
+
+  /* Transition */
+  --easing: cubic-bezier(.2,.9,.2,1);
+  --duration: 200ms;
+}
+
+/* -------------------------
+   Base / reset
+   ------------------------- */
+* { box-sizing: border-box; }
+html,body{ height:100%; font-family:var(--font-family); font-size:var(--base-size); color:var(--text); background:var(--bg); -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
+img,svg{ max-width:100%; height:auto; display:block; }
+a{ color:var(--primary); text-decoration:none; }
+a:hover{ text-decoration:underline; }
+
+/* Utility */
+.visually-hidden{ position:absolute !important; height:1px; width:1px; overflow:hidden; clip:rect(1px,1px,1px,1px); white-space:nowrap; }
+
+/* -------------------------
+   Layout: header / nav / main
+   ------------------------- */
+header{
+  background:linear-gradient(180deg, var(--primary-600), var(--primary));
+  color: #fff;
+  padding: calc(var(--space-md) - 4px) var(--space-md);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:var(--space-md);
+  box-shadow: 0 4px 20px rgba(6,10,24,0.12);
+  position:sticky;
+  top:0;
+  z-index:1000;
+}
+header h1{ font-size:1.05rem; font-weight:700; letter-spacing:0.2px; }
+header nav{ display:flex; gap:0.5rem; align-items:center; }
+
+/* Topbar button styles */
+button{
+  font: inherit;
+  border:0;
+  background:var(--primary);
+  color:#fff;
+  padding:0.55rem 0.9rem;
+  border-radius:8px;
+  cursor:pointer;
+  transition: transform var(--duration) var(--easing), box-shadow var(--duration) var(--easing), background-color var(--duration) var(--easing);
+  box-shadow: 0 6px 16px rgba(6,10,24,0.12);
+}
+button:active{ transform: translateY(1px); }
+button.muted-btn{
+  background:transparent;
+  color:var(--surface);
+  border:1px solid rgba(255,255,255,0.18);
+  box-shadow:none;
+}
+button.muted-btn:hover{ background: rgba(255,255,255,0.06); }
+
+/* Main container */
+main{
+  max-width:1200px;
+  margin: calc(var(--space-lg)) auto;
+  padding: 0 var(--space-md);
+}
+
+/* Page switching */
+.page{ display:none; }
+.page.active{ display:block; animation:fadeIn var(--duration) var(--easing) both; }
+@keyframes fadeIn { from { opacity:0; transform: translateY(6px);} to { opacity:1; transform:none; } }
+
+/* -------------------------
+   Cards and grids
+   ------------------------- */
+.card{
+  background:var(--surface);
+  border-radius:var(--radius);
+  padding: var(--space-md);
+  box-shadow: var(--panel-shadow);
+  border:1px solid var(--border);
+}
+.grid{
+  display:grid;
+  gap:var(--space-md);
+}
+.location-card{
+  border-left:6px solid var(--primary-600);
+  display:flex;
+  flex-direction:column;
+  gap:0.5rem;
+  transition: transform var(--duration) var(--easing), box-shadow var(--duration) var(--easing);
+}
+.location-card:hover, .card:focus-within{
+  transform: translateY(-4px);
+  box-shadow: 0 14px 34px rgba(8,12,28,0.08);
+}
+
+/* Card headings */
+.card h2, .card h3, .card h4{ margin:0 0 0.4rem 0; font-weight:700; color:var(--text); }
+.location-meta{ color:var(--muted); font-size:0.95rem; }
+
+/* Button row */
+.btn-row{ display:flex; gap:0.5rem; margin-top:auto; }
+.btn-row button{ padding:0.45rem 0.7rem; font-size:0.95rem; border-radius:8px; }
+.checkin-btn{ background:var(--accent); color:#fff; box-shadow: none; }
+.view-assign{ background:transparent; border:1px solid var(--border); color:var(--primary-600); }
+
+/* -------------------------
+   Time slots grid
+   ------------------------- */
+.timeslot-grid{
+  display:grid;
+  gap:0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+.timeslot{
+  background:linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.3));
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:0.6rem;
+  display:flex;
+  flex-direction:column;
+  gap:0.4rem;
+  align-items:flex-start;
+  transition: transform var(--duration) var(--easing), box-shadow var(--duration) var(--easing);
+}
+.timeslot:hover{ transform: translateY(-3px); box-shadow: 0 10px 30px rgba(8,12,28,0.06); }
+.timeslot .slot-title{ font-weight:700; color:var(--primary-600); }
+.timeslot .slot-meta{ color:var(--muted); font-size:0.9rem; }
+
+/* -------------------------
+   Tabs (Admin)
+   ------------------------- */
+.tabs{
+  display:flex;
+  flex-wrap:wrap;
+  gap:0.5rem;
+}
+.tab{
+  padding:0.5rem 0.75rem;
+  border-radius:999px;
+  background:transparent;
+  border:1px solid transparent;
+  color:var(--primary-600);
+  font-weight:700;
+  cursor:pointer;
+  transition: background-color var(--duration) var(--easing), color var(--duration) var(--easing), transform var(--duration) var(--easing);
+}
+.tab:hover{ transform: translateY(-2px); background:var(--glass); }
+.tab.active{
+  background:var(--primary);
+  color:white;
+  box-shadow: 0 8px 24px rgba(8,12,28,0.12);
+}
+
+/* Tab panel content spacing */
+.tab-content{ margin-top: var(--space-md); }
+
+/* -------------------------
+   Tables
+   ------------------------- */
+table{
+  width:100%;
+  border-collapse:collapse;
+  border-radius:8px;
+  overflow:hidden;
+  background:var(--surface);
+}
+th, td{
+  padding:0.65rem 0.75rem;
+  border-bottom:1px solid var(--border);
+  text-align:left;
+  vertical-align:middle;
+  font-size:0.95rem;
+}
+th{ background:#F8FAFC; font-weight:700; color:var(--primary-600); }
+tbody tr:hover{ background: rgba(8,77,167,0.03); }
+
+/* Action buttons in tables */
+table button{ padding:0.35rem 0.5rem; font-size:0.9rem; border-radius:6px; }
+table button.edit-location{ background:transparent; color:var(--primary-600); border:1px dashed var(--border); }
+table button.delete-location{ background:transparent; color:var(--danger); border:1px solid rgba(239,68,68,0.06); }
+
+/* -------------------------
+   Forms & inputs
+   ------------------------- */
+.form-row{ margin-bottom:var(--space-sm); display:flex; flex-direction:column; gap:0.35rem; }
+label{ font-weight:600; font-size:0.92rem; color:var(--text); }
+input[type="text"], input[type="password"], input[type="email"],
+input[type="date"], input[type="number"],
+select, textarea{
+  padding:0.6rem;
+  border-radius:8px;
+  border:1px solid var(--border);
+  background:linear-gradient(180deg, #fff, #fbfdff);
+  font-size:0.95rem;
+  outline:none;
+  transition: box-shadow var(--duration) var(--easing), border-color var(--duration) var(--easing);
+}
+input[type="date"]{
+  font-family: var(--font-family);
+  cursor: pointer;
+}
+input[type="date"]::-webkit-calendar-picker-indicator{
+  cursor: pointer;
+  font-size: 1.1rem;
+}
+input::placeholder, textarea::placeholder{ color:#9CA3AF; }
+input:focus, select:focus, textarea:focus{
+  border-color: rgba(11,77,167,0.9);
+  box-shadow: 0 6px 18px rgba(11,77,167,0.08);
+}
+
+/* Checkboxes and chips */
+.chips{ display:flex; gap:0.5rem; flex-wrap:wrap; }
+.chip{
+  padding:0.25rem 0.6rem;
+  border-radius:999px;
+  background:rgba(16,185,129,0.08);
+  color:var(--accent);
+  font-weight:600;
+  font-size:0.9rem;
+}
+input[type="checkbox"], input[type="radio"]{ width:18px; height:18px; accent-color:var(--primary); }
+
+/* Form inline helpers */
+.form-inline{ display:flex; gap:0.5rem; align-items:center; }
+.small{ font-size:0.88rem; color:var(--muted); }
+
+/* Buttons variants */
+.success{ background:var(--accent); color:white; }
+.danger{ background:var(--danger); color:white; }
+.transparent { background:transparent; color:var(--text); border:1px solid var(--border); }
+
+/* Focus outlines for keyboard users */
+:focus{ outline: none; }
+:focus-visible{ outline: 3px solid rgba(11,77,167,0.18); outline-offset: 3px; border-radius: 8px; }
+
+/* -------------------------
+   Modal
+   ------------------------- */
+.modal-backdrop{
+  position:fixed;
+  inset:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  background: rgba(2,6,23,0.5);
+  z-index:1200;
+  padding:var(--space-md);
+}
+.modal{
+  width:100%;
+  max-width:760px;
+  background:var(--surface);
+  border-radius:12px;
+  box-shadow: 0 30px 80px rgba(2,6,23,0.6);
+  padding:var(--space-md);
+  border:1px solid var(--border);
+  transform:translateY(0);
+}
+.modal-header{ display:flex; align-items:center; justify-content:space-between; gap:0.5rem; }
+.modal-header h3{ margin:0; font-size:1.05rem; }
+.modal-actions{ display:flex; gap:0.5rem; justify-content:flex-end; margin-top:var(--space-sm); }
+
+/* Modal close control */
+#modal-close{ background:transparent; color:var(--muted); font-size:1.05rem; border:0; padding:0.35rem; }
+
+/* Click outside hint */
+.modal-backdrop[aria-hidden="false"] .modal{ animation:popIn 180ms var(--easing) both; }
+@keyframes popIn{ from{ transform: translateY(6px) scale(0.995); opacity:0 } to{ transform:none; opacity:1 } }
+
+/* -------------------------
+   Responsive rules
+   ------------------------- */
+@media (max-width: 640px){
+  header{ padding: calc(var(--space-sm)) var(--space-sm); flex-direction:row; gap:0.5rem; }
+  .grid{ grid-template-columns: 1fr; }
+  .card{ padding:var(--space-sm); }
+  .btn-row{ flex-direction:row; }
+  .timeslot-grid{ grid-template-columns: repeat(2, 1fr); }
+  table th, table td{ font-size:0.9rem; padding:0.5rem; }
+}
+
+@media (min-width: 641px) and (max-width: 980px){
+  .grid{ grid-template-columns: repeat(2, 1fr); }
+  .timeslot-grid{ grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+}
+
+@media (min-width: 981px){
+  .grid{ grid-template-columns: repeat(3, 1fr); }
+  .card.large{ grid-column: span 2; }
+  main{ padding: 0 var(--space-lg); }
+}
+
+/* -------------------------
+   Print-friendly styles (reports)
+   ------------------------- */
+@media print{
+  :root{
+    --bg: #fff;
+    --surface: #fff;
+    --text: #000;
+  }
+  body, main{ background:transparent; color:#000; }
+  header, footer, .tabs, .modal-backdrop, .btn-row, button, input, select, .muted-btn, .chip { display:none !important; }
+  .card{ box-shadow:none; border: 1px solid #ddd; }
+  table{ border: 1px solid #ddd; }
+  th, td{ background:transparent; color:#000; border: 1px solid #ddd; }
+  .timeslot-grid{ display:block; }
+  .timeslot{ border:1px solid #ddd; margin-bottom:0.5rem; padding:0.5rem; page-break-inside:avoid; }
+  .page-break { page-break-before: always; }
+}
+
+/* -------------------------
+   Accessibility helpers
+   ------------------------- */
+/* Make interactive elements keyboard-friendly */
+button, [role="button"], .tab{ -webkit-tap-highlight-color: transparent; }
+
+/* -------------------------
+   Micro-interactions & hover states
+   ------------------------- */
+a.button-like, button{
+  transition: transform var(--duration) var(--easing), box-shadow var(--duration) var(--easing), opacity var(--duration) var(--easing);
+}
+button:hover{ transform: translateY(-2px); box-shadow: 0 12px 28px rgba(8,12,28,0.10); }
+.tab:hover, .location-card:hover{ cursor:pointer; }
+
+/* Subtle focus ring for inputs for accessibility */
+input:focus, textarea:focus, select:focus{ box-shadow: 0 6px 20px rgba(11,77,167,0.08); }
+
+/* -------------------------
+   Minor helpers used throughout
+   ------------------------- */
+.right{ margin-left:auto; }
+.muted{ color:var(--muted); }
+.kv{ color:var(--muted); font-size:0.9rem; }
+.success-outline{ background:transparent; border:1px solid rgba(16,185,129,0.12); color:var(--accent); }
+
+/* End of stylesheet */

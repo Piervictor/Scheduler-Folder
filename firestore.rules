@@ -1,0 +1,169 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ============================================
+    // HELPER FUNCTIONS
+    // ============================================
+    
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Get user document
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    // Check if user has specific role
+    function hasRole(role) {
+      return isAuthenticated() && getUserData().role == role;
+    }
+    
+    // Check if user has any of the specified roles
+    function hasAnyRole(roles) {
+      return isAuthenticated() && getUserData().role in roles;
+    }
+    
+    // Check if user is admin
+    function isAdmin() {
+      return hasRole('admin');
+    }
+    
+    // Check if user is coordinator
+    function isCoordinator() {
+      return hasRole('coordinator');
+    }
+    
+    // Check if user owns the resource
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Check if user belongs to same congregation
+    function sameCongregation(congregation) {
+      return isAuthenticated() && getUserData().congregation == congregation;
+    }
+    
+    // Check if elder can view (same congregation only)
+    function elderCanView(congregation) {
+      return hasRole('elder') && sameCongregation(congregation);
+    }
+
+    // ============================================
+    // USERS COLLECTION
+    // ============================================
+    match /users/{userId} {
+      // Users can read their own profile, admins can read all
+      allow read: if isOwner(userId) || isAdmin();
+      
+      // Only admins can create/update/delete users
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ============================================
+    // LOCATIONS COLLECTION
+    // ============================================
+    match /locations/{locationId} {
+      // All authenticated users can read locations
+      allow read: if isAuthenticated();
+      
+      // Admins and coordinators can manage locations
+      allow create, update, delete: if isAdmin() || isCoordinator();
+    }
+
+    // ============================================
+    // VOLUNTEERS COLLECTION
+    // ============================================
+    match /volunteers/{volunteerId} {
+      // All authenticated users can read volunteer list
+      allow read: if isAuthenticated();
+      
+      // Volunteers can update their own profile
+      allow update: if isAuthenticated() && 
+                      resource.data.userId == request.auth.uid;
+      
+      // Admins and coordinators can manage volunteers
+      allow create, delete: if isAdmin() || isCoordinator();
+      allow update: if isAdmin() || isCoordinator();
+    }
+
+    // ============================================
+    // SCHEDULES/TIME SLOTS COLLECTION
+    // ============================================
+    match /schedules/{scheduleId} {
+      // All authenticated users can read schedules
+      allow read: if isAuthenticated();
+      
+      // Admins and coordinators can manage schedules
+      allow create, update, delete: if isAdmin() || isCoordinator();
+    }
+
+    // ============================================
+    // BOOKINGS/ASSIGNMENTS COLLECTION
+    // ============================================
+    match /bookings/{bookingId} {
+      // All authenticated users can read bookings (for capacity checking)
+      allow read: if isAuthenticated();
+      
+      // Volunteers can create their own bookings
+      allow create: if isAuthenticated() && 
+                      request.resource.data.userId == request.auth.uid &&
+                      // Validate required fields
+                      request.resource.data.locationId is string &&
+                      request.resource.data.date is string &&
+                      request.resource.data.slotId is string;
+      
+      // Users can cancel their own bookings (if within 30 min rule)
+      // Admins and coordinators can update/delete any booking
+      allow update, delete: if isAdmin() || 
+                              isCoordinator() || 
+                              (isAuthenticated() && resource.data.userId == request.auth.uid);
+    }
+
+    // ============================================
+    // REPORTS COLLECTION (optional)
+    // ============================================
+    match /reports/{reportId} {
+      // Admins, coordinators, reporters, and shift managers can read reports
+      allow read: if hasAnyRole(['admin', 'coordinator', 'reporter', 'shift-manager']);
+      
+      // Only admins and reporters can create/update reports
+      allow create, update: if hasAnyRole(['admin', 'reporter']);
+      
+      // Only admins can delete reports
+      allow delete: if isAdmin();
+    }
+
+    // ============================================
+    // PREFERENCES COLLECTION (user settings)
+    // ============================================
+    match /preferences/{userId} {
+      // Users can read/write their own preferences
+      allow read, write: if isOwner(userId);
+      
+      // Admins can read all preferences
+      allow read: if isAdmin();
+    }
+
+    // ============================================
+    // AUDIT LOG COLLECTION (optional)
+    // ============================================
+    match /auditLog/{logId} {
+      // Only admins can read audit logs
+      allow read: if isAdmin();
+      
+      // No one can write directly (use Cloud Functions)
+      allow write: if false;
+    }
+
+    // ============================================
+    // DEFAULT DENY
+    // ============================================
+    // Deny access to any other collections not explicitly defined
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

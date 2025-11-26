@@ -1,0 +1,920 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Congregation Volunteer Scheduler</title>
+  <style>
+    /* Basic Reset */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html,body { height: 100%; font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:#f5f7fb; color:#222; }
+
+    /* Layout */
+    header { background:#2c3e50; color:#fff; padding:1rem; display:flex; align-items:center; justify-content:space-between; }
+    header h1 { font-size:1.1rem; }
+    main { padding:1rem; max-width:1200px; margin:1rem auto; }
+
+    .page { display:none; }
+    .page.active { display:block; }
+
+    /* Login */
+    .login-wrap { max-width:420px; margin:2rem auto; background:#fff; padding:1.5rem; border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,0.06); }
+    .form-row { margin-bottom:0.75rem; }
+    label { display:block; margin-bottom:0.25rem; font-weight:600; font-size:0.9rem; }
+    input[type="text"], input[type="password"], input[type="email"], select, textarea {
+      width:100%; padding:0.6rem; border:1px solid #d7dbe0; border-radius:6px; background:#fff;
+    }
+    button { padding:0.6rem 1rem; border-radius:6px; border:0; background:#2c3e50; color:#fff; cursor:pointer; }
+    .muted { color:#6b7280; font-size:0.9rem; }
+
+    /* Dashboards & Cards */
+    .grid { display:grid; gap:1rem; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+    .card { background:#fff; padding:1rem; border-radius:8px; box-shadow:0 4px 12px rgba(14,20,30,0.06); }
+    .timeslot-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:0.75rem; margin-top:0.75rem; }
+    .timeslot-grid .card { box-shadow:none; border:1px solid #e6eef7; }
+    .location-info { display:none; margin-top:0.4rem; font-size:0.9rem; color:#0f172a; }
+    .booking-selection { display:none; margin-top:0.75rem; padding:0.75rem; border-radius:6px; font-weight:600; background:#ecfdf5; color:#065f46; }
+    .booking-note { font-size:0.85rem; color:#475569; background:#f0f9ff; border-left:3px solid #0ea5e9; padding:0.6rem 0.75rem; border-radius:6px; margin:0.75rem 0; }
+    .booking-actions { display:flex; justify-content:flex-end; margin-top:0.75rem; }
+    .location-card { border-left:6px solid #2c3e50; }
+    .location-card h3 { margin-bottom:0.5rem; }
+    .location-meta { font-size:0.9rem; color:#4b5563; margin-bottom:0.5rem; }
+    .btn-row { margin-top:0.75rem; display:flex; gap:0.5rem; }
+
+    /* Admin tabs */
+    .tabs { display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:1rem; }
+    .tab { padding:0.5rem 0.75rem; background:#e6eef7; border-radius:6px; cursor:pointer; color:#0b3a66; font-weight:600; }
+    .tab.active { background:#2c3e50; color:#fff; }
+    .tab-content { margin-top:1rem; }
+
+    table { width:100%; border-collapse:collapse; background:#fff; border-radius:6px; overflow:hidden; }
+    th,td { padding:0.6rem; border-bottom:1px solid #eef1f5; text-align:left; font-size:0.95rem; }
+    th { background:#f8fafc; color:#334155; font-weight:700; }
+
+    .small { font-size:0.85rem; color:#475569; }
+
+    /* Forms inside cards */
+    .form-inline { display:flex; gap:0.5rem; align-items:center; }
+    .chips { display:flex; gap:0.25rem; flex-wrap:wrap; }
+    .chip { padding:0.25rem 0.5rem; background:#eef2ff; border-radius:999px; font-size:0.85rem; }
+
+    /* Modals */
+    .modal-backdrop { position:fixed; inset:0; background:rgba(2,6,23,0.5); display:none; align-items:center; justify-content:center; z-index:1200; }
+    .modal { background:#fff; width:100%; max-width:720px; padding:1rem; border-radius:10px; box-shadow:0 10px 40px rgba(2,6,23,0.3); }
+    .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; }
+    .modal-actions { display:flex; gap:0.5rem; justify-content:flex-end; margin-top:0.75rem; }
+
+    /* Utility */
+    .right { margin-left:auto; }
+    .muted-btn { background:transparent; color:#2c3e50; border:1px solid #dbe7f3; padding:0.4rem 0.6rem; border-radius:6px; }
+    .danger { background:#ef4444; }
+    .success { background:#10b981; }
+    footer { margin-top:2rem; text-align:center; color:#6b7280; font-size:0.9rem; }
+
+    /* Responsive */
+    @media (max-width:640px) {
+      header { flex-direction:column; align-items:flex-start; gap:0.5rem; }
+    }
+
+    /* Enhanced Mobile Responsiveness */
+    @media (max-width: 768px) {
+      main { padding: 0.5rem; }
+      .modal { max-width: 95vw; padding: 0.75rem; margin: 1rem; }
+      .grid { grid-template-columns: 1fr; }
+      table { font-size: 0.85rem; }
+      th, td { padding: 0.4rem; }
+      .tabs { gap: 0.25rem; }
+      .tab { padding: 0.4rem 0.6rem; font-size: 0.85rem; }
+      .btn-row { flex-direction: column; }
+      button { width: 100%; }
+    }
+
+    /* Touch-friendly tap targets (min 44x44px) */
+    @media (pointer: coarse) {
+      button, .tab, input[type="checkbox"], input[type="radio"] {
+        min-height: 44px;
+        min-width: 44px;
+      }
+    }
+
+    /* Accessibility Enhancements */
+    /* Focus visible for keyboard navigation */
+    *:focus-visible {
+      outline: 3px solid #3b82f6;
+      outline-offset: 2px;
+    }
+
+    /* Skip to content link */
+    .skip-link {
+      position: absolute;
+      top: -40px;
+      left: 0;
+      background: #2c3e50;
+      color: white;
+      padding: 8px;
+      text-decoration: none;
+      z-index: 100;
+    }
+
+    .skip-link:focus {
+      top: 0;
+    }
+
+    /* High contrast mode support */
+    @media (prefers-contrast: high) {
+      button { border: 2px solid currentColor; }
+      .card { border: 1px solid #000; }
+    }
+
+    /* Reduced motion support */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    /* Loading states */
+    .loading {
+      opacity: 0.6;
+      pointer-events: none;
+      position: relative;
+    }
+
+    .loading::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 20px;
+      height: 20px;
+      margin: -10px 0 0 -10px;
+      border: 2px solid #2c3e50;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Empty states */
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: #6b7280;
+    }
+
+    .empty-state-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+
+    /* Better table responsiveness */
+    @media (max-width: 640px) {
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+
+      thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+      }
+
+      tr {
+        margin-bottom: 1rem;
+        border: 1px solid #eef1f5;
+        border-radius: 8px;
+        padding: 0.5rem;
+      }
+
+      td {
+        border: none;
+        position: relative;
+        padding-left: 50%;
+        text-align: right;
+      }
+
+      td:before {
+        content: attr(data-label);
+        position: absolute;
+        left: 0.5rem;
+        width: 45%;
+        padding-right: 10px;
+        white-space: nowrap;
+        font-weight: bold;
+        text-align: left;
+      }
+    }
+
+    /* Print styles */
+    @media print {
+      header, nav, .btn-row, button, .muted-btn {
+        display: none !important;
+      }
+
+      .page {
+        display: block !important;
+      }
+
+      .card {
+        break-inside: avoid;
+        box-shadow: none;
+        border: 1px solid #ccc;
+      }
+    }
+
+    /* Dark mode support (future enhancement) */
+    @media (prefers-color-scheme: dark) {
+      /* To be implemented */
+    }
+  </style>
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+  <header>
+    <h1>Congregation Volunteer Scheduler</h1>
+    <nav aria-label="topbar">
+      <button id="demo-logout" class="muted-btn" style="display:none;">Log out</button>
+    </nav>
+  </header>
+
+  <main id="main-content">
+    <!-- LOGIN PAGE -->
+    <section id="login-page" class="page active" aria-labelledby="login-title">
+      <div class="login-wrap" role="region" aria-label="Login">
+        <h2 id="login-title">Sign in</h2>
+        <p class="muted">Enter your username and password. Choose role for demo navigation.</p>
+
+        <form id="login-form" aria-describedby="login-help">
+          <div class="form-row">
+            <label for="username">Username</label>
+            <input id="username" name="username" type="text" required autocomplete="username" placeholder="jane.doe" />
+          </div>
+
+          <div class="form-row">
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" required autocomplete="current-password" placeholder="••••••••" />
+          </div>
+
+          <div class="form-row">
+            <label for="role">Role (demo)</label>
+            <select id="role" name="role" aria-label="Role selection">
+              <option value="volunteer">Volunteer</option>
+              <option value="admin">Admin</option>
+              <option value="elder">Elder</option>
+            </select>
+          </div>
+
+          <div class="form-row" style="display:flex; gap:0.5rem;">
+            <button type="submit">Sign in</button>
+            <button type="button" id="demo-create" class="muted-btn">Create account</button>
+          </div>
+
+          <p id="login-help" class="small muted">This demo uses client-side routing to show different dashboards. Replace with real auth backend for production.</p>
+        </form>
+      </div>
+    </section>
+
+    <!-- VOLUNTEER DASHBOARD -->
+    <section id="volunteer-dashboard" class="page" aria-labelledby="volunteer-title">
+      <div class="card">
+        <div style="display:flex; flex-wrap:wrap; gap:0.75rem; justify-content:space-between; align-items:flex-start;">
+          <div>
+            <h2 id="volunteer-title">Volunteer Dashboard</h2>
+            <p class="muted">Reserve time slots using the locations and schedules configured by admins.</p>
+          </div>
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+            <button id="view-my-assignments-btn" class="muted-btn">View My Assignments</button>
+            <button id="view-all-locations-btn" class="muted-btn">Today's Availability</button>
+          </div>
+        </div>
+        <div class="booking-note" role="status">Locations sync with Admin &gt; Locations and time slots sync with Admin &gt; Schedules in real time.</div>
+      </div>
+
+      <div class="grid" style="margin-top:1rem;">
+        <article class="card" id="my-reservations-summary" style="display:none;" aria-live="polite">
+          <h3>Upcoming Reservations</h3>
+          <div id="summary-content" class="small muted" style="min-height:3em; margin-top:0.5rem;"></div>
+          <button id="view-all-reservations" class="muted-btn" style="margin-top:0.75rem;">Manage Reservations</button>
+        </article>
+
+        <article class="card">
+          <h3>How Booking Works</h3>
+          <ol class="small" style="margin-top:0.5rem; line-height:1.5; list-style-position:inside;">
+            <li>Select a location created in the Admin dashboard.</li>
+            <li>Pick a date to load that location's configured time slots.</li>
+            <li>Choose an available slot (capacity enforced automatically).</li>
+            <li>Confirm to save the booking to localStorage.</li>
+            <li>Need to cancel? Use "My Assignments" at least 30 minutes before the shift.</li>
+          </ol>
+        </article>
+      </div>
+
+      <article class="card booking-flow" style="margin-top:1rem;" aria-labelledby="booking-flow-title">
+        <h3 id="booking-flow-title">Reserve a Time Slot</h3>
+
+        <div class="form-row">
+          <label for="booking-location">1. Choose a location</label>
+          <select id="booking-location" aria-describedby="location-source">
+            <option value="">Loading locations...</option>
+          </select>
+          <div id="location-source" class="small muted">Powered by Admin &gt; Locations</div>
+        </div>
+
+        <div id="location-info" class="small location-info"></div>
+
+        <div class="form-row" style="margin-top:0.75rem;">
+          <label for="booking-date">2. Choose a date</label>
+          <input id="booking-date" type="date" disabled aria-disabled="true" />
+        </div>
+
+        <p class="booking-note">Time slots below come directly from Admin &gt; Schedules (per-location overrides supported). Add or edit slots there to change what volunteers see.</p>
+
+        <div id="timeslot-grid" class="timeslot-grid" aria-live="polite">
+          <div class="card" style="grid-column:1 / -1; text-align:center; padding:1.5rem;">
+            Select a location and date to view available time slots.
+          </div>
+        </div>
+
+        <div id="booking-selection-summary" class="booking-selection" aria-live="polite">
+          Selected slot details will appear here.
+        </div>
+
+        <div class="booking-actions">
+          <button id="confirm-booking-btn" disabled>Confirm Booking</button>
+        </div>
+      </article>
+
+      <div style="margin-top:1rem;">
+        <button id="go-to-admin" class="muted-btn">Open Admin Panel (demo)</button>
+      </div>
+    </section>
+
+    <!-- ADMIN PANEL -->
+    <section id="admin-panel" class="page" aria-labelledby="admin-title">
+      <div class="card">
+        <h2 id="admin-title">Admin Panel</h2>
+        <p class="muted">Manage locations, volunteers, schedules, assignments, and generate reports.</p>
+        <div style="margin-top:0.75rem;">
+          <div class="tabs" role="tablist" aria-label="Admin tabs">
+            <div class="tab active" data-tab="locations" role="tab" aria-selected="true">Locations</div>
+            <div class="tab" data-tab="volunteers" role="tab">Volunteers</div>
+            <div class="tab" data-tab="schedules" role="tab">Schedules</div>
+            <div class="tab" data-tab="assignments" role="tab">Assignments</div>
+            <div class="tab" data-tab="reports" role="tab">Reports</div>
+            <div class="tab" data-tab="settings" role="tab">Settings</div>
+          </div>
+
+          <div class="tab-content">
+            <!-- Locations Tab -->
+            <section id="tab-locations" class="tab-panel" role="tabpanel">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                <h3>Locations</h3>
+                <div>
+                  <button id="add-location-btn">Add Location</button>
+                </div>
+              </div>
+
+              <table aria-label="Locations table">
+                <thead>
+                  <tr><th>Name</th><th>Address</th><th>Capacity</th><th>Actions</th></tr>
+                </thead>
+                <tbody id="locations-table-body">
+                  <tr>
+                    <td data-label="Name">Taytay Market</td>
+                    <td data-label="Address">Market Blvd.</td>
+                    <td data-label="Capacity">6</td>
+                    <td data-label="Actions">
+                      <button class="edit-location" data-location="Taytay Market">Edit</button>
+                      <button class="delete-location" data-location="Taytay Market">Delete</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td data-label="Name">Angono Plaza</td>
+                    <td data-label="Address">Plaza St.</td>
+                    <td data-label="Capacity">4</td>
+                    <td data-label="Actions">
+                      <button class="edit-location" data-location="Angono Plaza">Edit</button>
+                      <button class="delete-location" data-location="Angono Plaza">Delete</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td data-label="Name">Angono Entrance</td>
+                    <td data-label="Address">Entrance Rd.</td>
+                    <td data-label="Capacity">4</td>
+                    <td data-label="Actions">
+                      <button class="edit-location" data-location="Angono Entrance">Edit</button>
+                      <button class="delete-location" data-location="Angono Entrance">Delete</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td data-label="Name">Pritil Entrance</td>
+                    <td data-label="Address">Pritil Ave.</td>
+                    <td data-label="Capacity">3</td>
+                    <td data-label="Actions">
+                      <button class="edit-location" data-location="Pritil Entrance">Edit</button>
+                      <button class="delete-location" data-location="Pritil Entrance">Delete</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td data-label="Name">Pritil Exit</td>
+                    <td data-label="Address">Exit Rd.</td>
+                    <td data-label="Capacity">2</td>
+                    <td data-label="Actions">
+                      <button class="edit-location" data-location="Pritil Exit">Edit</button>
+                      <button class="delete-location" data-location="Pritil Exit">Delete</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </section>
+
+            <!-- Volunteers Tab -->
+            <section id="tab-volunteers" class="tab-panel" role="tabpanel" hidden>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                <h3>Volunteers</h3>
+                <div>
+                  <button id="add-volunteer-btn">Add Volunteer</button>
+                </div>
+              </div>
+
+              <table aria-label="Volunteers table">
+                <thead>
+                  <tr><th>Name</th><th>Email</th><th>Phone</th><th>Availability</th><th>Actions</th></tr>
+                </thead>
+                <tbody id="volunteers-table-body">
+                  <tr>
+                    <td data-label="Name">Maria Santos</td>
+                    <td data-label="Email">maria@example.com</td>
+                    <td data-label="Phone">+63 912 345 6789</td>
+                    <td data-label="Availability"><span class="small">6-8am, 10-12pm</span></td>
+                    <td data-label="Actions">
+                      <button class="edit-volunteer" data-volunteer="Maria Santos">Edit</button>
+                      <button class="delete-volunteer" data-volunteer="Maria Santos">Delete</button>
+                    </td>
+                  </tr>
+                  <!-- more volunteer rows -->
+                </tbody>
+              </table>
+            </section>
+
+            <!-- Schedules Tab -->
+            <section id="tab-schedules" class="tab-panel" role="tabpanel" hidden>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                <h3>Schedules</h3>
+                <div>
+                  <button id="create-schedule-btn">Create Schedule</button>
+                </div>
+              </div>
+
+              <div class="card">
+                <h4>Upcoming Schedule</h4>
+                <table aria-label="Schedules table">
+                  <thead>
+                    <tr><th>Date</th><th>Location</th><th>Time Slot</th><th>Volunteers Required</th><th>Actions</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>2025-12-01</td>
+                      <td>Taytay Market</td>
+                      <td>6-8am</td>
+                      <td>3</td>
+                      <td><button>Assign</button></td>
+                    </tr>
+                    <tr>
+                      <td>2025-12-01</td>
+                      <td>Angono Plaza</td>
+                      <td>10-12pm</td>
+                      <td>2</td>
+                      <td><button>Assign</button></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <!-- Assignments Tab -->
+            <section id="tab-assignments" class="tab-panel" role="tabpanel" hidden>
+              <h3>Assignments</h3>
+              <div class="card">
+                <h4>Current Assignments</h4>
+                <table aria-label="Assignments table">
+                  <thead><tr><th>Date</th><th>Volunteer</th><th>Location</th><th>Time Slot</th><th>Actions</th></tr></thead>
+                  <tbody>
+                    <tr>
+                      <td>2025-12-01</td>
+                      <td>Maria Santos</td>
+                      <td>Taytay Market</td>
+                      <td>6-8am</td>
+                      <td><button class="view-assignment">View</button> <button class="unassign">Unassign</button></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <!-- Reports Tab -->
+            <section id="tab-reports" class="tab-panel" role="tabpanel" hidden>
+              <h3>Reports</h3>
+              <div class="grid">
+                <div class="card">
+                  <h4>Volunteer Coverage</h4>
+                  <p class="small">Coverage summary by location and time slot.</p>
+                  <ul class="small">
+                    <li>Taytay Market — 80% coverage this week</li>
+                    <li>Angono Plaza — 60% coverage this week</li>
+                  </ul>
+                </div>
+
+                <div class="card">
+                  <h4>Attendance</h4>
+                  <p class="small">Attendance summary for the last 30 days.</p>
+                  <ul class="small">
+                    <li>On-time check-ins: 92%</li>
+                    <li>No-shows: 3%</li>
+                  </ul>
+                </div>
+              </div>
+            </section>
+
+            <!-- Settings Tab -->
+            <section id="tab-settings" class="tab-panel" role="tabpanel" hidden>
+              <h3>Settings</h3>
+              <div class="card">
+                <form id="settings-form">
+                  <div class="form-row">
+                    <label for="org-name">Organization name</label>
+                    <input id="org-name" type="text" value="Congregation Example Church" />
+                  </div>
+                  <div class="form-row">
+                    <label for="timezone">Timezone</label>
+                    <select id="timezone"><option>UTC</option><option>UTC+8</option></select>
+                  </div>
+                  <div class="form-row modal-actions">
+                    <button type="submit" class="success">Save</button>
+                    <button type="button" class="muted-btn">Cancel</button>
+                  </div>
+                </form>
+              </div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ELDER DASHBOARD (read-only reports) -->
+    <section id="elder-dashboard" class="page" aria-labelledby="elder-title">
+      <div class="card">
+        <h2 id="elder-title">Elder Dashboard</h2>
+        <p class="muted">Read-only reports, attendance logs, and safety notes.</p>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <h4>Weekly Summary</h4>
+          <p class="small">Total volunteers: 46 · Shifts completed: 123</p>
+        </div>
+        <div class="card">
+          <h4>Attendance Log (Read-only)</h4>
+          <table aria-label="Attendance log">
+            <thead><tr><th>Date</th><th>Location</th><th>Volunteer</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>2025-11-20</td><td>Angono Plaza</td><td>Jose Perez</td><td>Checked in</td></tr>
+              <tr><td>2025-11-19</td><td>Taytay Market</td><td>Maria Santos</td><td>No-show</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      © 2025 Congregation Volunteer Scheduler — Demo UI
+    </footer>
+  </main>
+
+  <!-- MODALS -->
+  <div id="modal-backdrop" class="modal-backdrop" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal" role="document" aria-labelledby="modal-title">
+      <div class="modal-header">
+        <h3 id="modal-title">Modal title</h3>
+        <button id="modal-close" aria-label="Close">✕</button>
+      </div>
+
+      <div id="modal-body">
+        <!-- dynamic content goes here -->
+      </div>
+
+      <div class="modal-actions" id="modal-actions">
+        <button id="modal-cancel" class="muted-btn">Cancel</button>
+        <button id="modal-confirm" class="danger">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- OFFSCREEN FORM TEMPLATES (for add/edit) -->
+  <template id="location-form-template">
+    <form id="location-form">
+      <div class="form-row">
+        <label for="location-name">Location name</label>
+        <input id="location-name" name="name" type="text" required />
+      </div>
+      <div class="form-row">
+        <label for="location-address">Address</label>
+        <input id="location-address" name="address" type="text" />
+      </div>
+      <div class="form-row">
+        <label for="location-capacity">Capacity (volunteers)</label>
+        <input id="location-capacity" name="capacity" type="number" min="1" value="3" />
+      </div>
+      <div class="form-row">
+        <label for="location-notes">Notes</label>
+        <textarea id="location-notes" name="notes" rows="3"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="muted-btn" id="cancel-location">Cancel</button>
+        <button type="submit" class="success">Save Location</button>
+      </div>
+    </form>
+  </template>
+
+  <template id="volunteer-form-template">
+    <form id="volunteer-form">
+      <div class="form-row">
+        <label for="vol-name">Full name</label>
+        <input id="vol-name" name="name" type="text" required />
+      </div>
+      <div class="form-row">
+        <label for="vol-email">Email</label>
+        <input id="vol-email" name="email" type="email" />
+      </div>
+      <div class="form-row">
+        <label for="vol-phone">Phone</label>
+        <input id="vol-phone" name="phone" type="text" />
+      </div>
+      <div class="form-row">
+        <label>Availability (time slots)</label>
+        <div class="chips" aria-label="Time slot availability">
+          <label><input type="checkbox" name="timeslot" value="6-8am" /> 6-8am</label>
+          <label><input type="checkbox" name="timeslot" value="8-10am" /> 8-10am</label>
+          <label><input type="checkbox" name="timeslot" value="10-12pm" /> 10-12pm</label>
+          <label><input type="checkbox" name="timeslot" value="12-2pm" /> 12-2pm</label>
+          <label><input type="checkbox" name="timeslot" value="2-4pm" /> 2-4pm</label>
+          <label><input type="checkbox" name="timeslot" value="4-6pm" /> 4-6pm</label>
+          <label><input type="checkbox" name="timeslot" value="6-8pm" /> 6-8pm</label>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label for="vol-locations">Preferred Locations</label>
+        <select id="vol-locations" name="locations" multiple size="4" aria-label="Preferred Locations">
+          <option>Taytay Market</option>
+          <option>Angono Plaza</option>
+          <option>Angono Entrance</option>
+          <option>Pritil Entrance</option>
+          <option>Pritil Exit</option>
+        </select>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="muted-btn" id="cancel-volunteer">Cancel</button>
+        <button type="submit" class="success">Save Volunteer</button>
+      </div>
+    </form>
+  </template>
+
+  <script>
+    // Minimal client-side router and UI interactions for demo purposes.
+    (function () {
+      const pages = {
+        login: document.getElementById('login-page'),
+        volunteer: document.getElementById('volunteer-dashboard'),
+        admin: document.getElementById('admin-panel'),
+        elder: document.getElementById('elder-dashboard')
+      };
+      const logoutBtn = document.getElementById('demo-logout');
+
+      function showPage(key) {
+        Object.values(pages).forEach(p => p.classList.remove('active'));
+        pages[key].classList.add('active');
+        logoutBtn.style.display = key === 'login' ? 'none' : 'inline-block';
+      }
+
+      // Login form demo
+      document.getElementById('login-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const role = document.getElementById('role').value;
+        if (role === 'admin') showPage('admin');
+        else if (role === 'elder') showPage('elder');
+        else showPage('volunteer');
+      });
+
+      logoutBtn.addEventListener('click', function () {
+        showPage('login');
+      });
+
+      // Demo: Go to admin from volunteer
+      document.getElementById('go-to-admin').addEventListener('click', function () {
+        showPage('admin');
+      });
+
+      // Admin tabs behavior
+      const tabs = document.querySelectorAll('.tab');
+      const panels = document.querySelectorAll('.tab-panel');
+      tabs.forEach(tab => tab.addEventListener('click', function () {
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        const name = tab.getAttribute('data-tab');
+        panels.forEach(p => p.hidden = true);
+        document.getElementById('tab-' + name).hidden = false;
+      }));
+
+      // Modal handling
+      const backdrop = document.getElementById('modal-backdrop');
+      const modalTitle = document.getElementById('modal-title');
+      const modalBody = document.getElementById('modal-body');
+      const modalClose = document.getElementById('modal-close');
+      const modalCancel = document.getElementById('modal-cancel');
+      const modalConfirm = document.getElementById('modal-confirm');
+
+      function openModal({ title = 'Modal', body = '', showConfirm = true, confirmText = 'Confirm', onConfirm = null }) {
+        modalTitle.textContent = title;
+        if (typeof body === 'string') modalBody.innerHTML = '<div>' + body + '</div>';
+        else modalBody.innerHTML = '', modalBody.appendChild(body);
+        modalConfirm.textContent = confirmText;
+        modalConfirm.style.display = showConfirm ? 'inline-block' : 'none';
+        backdrop.style.display = 'flex';
+        backdrop.setAttribute('aria-hidden', 'false');
+
+        // handler (one-time)
+        function confirmHandler() {
+          if (onConfirm) onConfirm();
+          closeModal();
+        }
+        function keyHandler(e) { if (e.key === 'Escape') closeModal(); }
+
+        modalConfirm.onclick = confirmHandler;
+        modalClose.onclick = closeModal;
+        modalCancel.onclick = closeModal;
+        document.addEventListener('keydown', keyHandler);
+        function closeModal() {
+          backdrop.style.display = 'none';
+          backdrop.setAttribute('aria-hidden', 'true');
+          modalConfirm.onclick = null;
+          modalClose.onclick = null;
+          modalCancel.onclick = null;
+          document.removeEventListener('keydown', keyHandler);
+        }
+      }
+
+      // Location add/edit
+      document.getElementById('add-location-btn').addEventListener('click', function () {
+        const tpl = document.getElementById('location-form-template');
+        const formNode = tpl.content.cloneNode(true).children[0];
+        formNode.querySelector('#cancel-location').addEventListener('click', () => backdrop.style.display = 'none');
+        formNode.addEventListener('submit', function (e) {
+          e.preventDefault();
+          // demo: read values and show confirmation
+          const name = formNode.querySelector('[name="name"]').value;
+          openModal({
+            title: 'Location added',
+            body: '<p>Location "' + name + '" added (demo).</p>',
+            showConfirm: false
+          });
+        });
+        openModal({ title: 'Add Location', body: formNode, showConfirm: false });
+      });
+
+      // Edit/Delete location quick handlers (delegation)
+      document.getElementById('locations-table-body').addEventListener('click', function (e) {
+        if (e.target.classList.contains('edit-location')) {
+          const loc = e.target.getAttribute('data-location');
+          const tpl = document.getElementById('location-form-template');
+          const formNode = tpl.content.cloneNode(true).children[0];
+          formNode.querySelector('[name="name"]').value = loc;
+          formNode.querySelector('#cancel-location').addEventListener('click', () => backdrop.style.display = 'none');
+          formNode.addEventListener('submit', function (ev) {
+            ev.preventDefault();
+            openModal({ title: 'Saved', body: '<p>Location updated (demo).</p>', showConfirm: false });
+          });
+          openModal({ title: 'Edit Location — ' + loc, body: formNode, showConfirm: false });
+        }
+        if (e.target.classList.contains('delete-location')) {
+          const loc = e.target.getAttribute('data-location');
+          openModal({
+            title: 'Delete Location',
+            body: '<p>Are you sure you want to delete location "' + loc + '"? This action cannot be undone.</p>',
+            confirmText: 'Delete',
+            onConfirm: () => {
+              openModal({ title: 'Deleted', body: '<p>Location "' + loc + '" deleted (demo).</p>', showConfirm: false });
+            }
+          });
+        }
+      });
+
+      // Volunteers
+      document.getElementById('add-volunteer-btn').addEventListener('click', function () {
+        const tpl = document.getElementById('volunteer-form-template');
+        const formNode = tpl.content.cloneNode(true).children[0];
+        formNode.querySelector('#cancel-volunteer').addEventListener('click', () => backdrop.style.display = 'none');
+        formNode.addEventListener('submit', function (e) {
+          e.preventDefault();
+          const name = formNode.querySelector('[name="name"]').value;
+          openModal({ title: 'Volunteer added', body: '<p>Volunteer "' + name + '" added (demo).</p>', showConfirm: false });
+        });
+        openModal({ title: 'Add Volunteer', body: formNode, showConfirm: false });
+      });
+
+      // Volunteers edit/delete
+      document.getElementById('volunteers-table-body').addEventListener('click', function (e) {
+        if (e.target.classList.contains('edit-volunteer')) {
+          const vol = e.target.getAttribute('data-volunteer');
+          const tpl = document.getElementById('volunteer-form-template');
+          const formNode = tpl.content.cloneNode(true).children[0];
+          formNode.querySelector('[name="name"]').value = vol;
+          formNode.querySelector('#cancel-volunteer').addEventListener('click', () => backdrop.style.display = 'none');
+          formNode.addEventListener('submit', function (ev) {
+            ev.preventDefault();
+            openModal({ title: 'Saved', body: '<p>Volunteer updated (demo).</p>', showConfirm: false });
+          });
+          openModal({ title: 'Edit Volunteer — ' + vol, body: formNode, showConfirm: false });
+        }
+        if (e.target.classList.contains('delete-volunteer')) {
+          const vol = e.target.getAttribute('data-volunteer');
+          openModal({
+            title: 'Delete Volunteer',
+            body: '<p>Are you sure you want to delete volunteer "' + vol + '"?</p>',
+            confirmText: 'Delete',
+            onConfirm: () => openModal({ title: 'Deleted', body: '<p>Volunteer "' + vol + '" removed (demo).</p>', showConfirm: false })
+          });
+        }
+      });
+
+      // Assignment view/unassign actions (delegation)
+      document.querySelectorAll('.view-assign, .view-assignment').forEach(btn => {
+        btn.addEventListener('click', function () {
+          const loc = btn.getAttribute('data-location') || 'Assignment';
+          openModal({ title: 'Assignments — ' + loc, body: '<p>Assignments list for ' + loc + ' (read-only demo).</p>', showConfirm: false });
+        });
+      });
+
+      document.querySelectorAll('.unassign').forEach(btn => {
+        btn.addEventListener('click', function () {
+          openModal({
+            title: 'Unassign',
+            body: '<p>Remove this assignment?</p>',
+            confirmText: 'Unassign',
+            onConfirm: () => openModal({ title: 'Unassigned', body: '<p>Assignment removed (demo).</p>', showConfirm: false })
+          });
+        });
+      });
+
+      // Check-in buttons (volunteer dashboard)
+      document.querySelectorAll('.checkin-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+          const place = btn.closest('[data-location]').getAttribute('data-location');
+          openModal({
+            title: 'Check in',
+            body: '<p>Check in at <strong>' + place + '</strong>?</p>',
+            confirmText: 'Check in',
+            onConfirm: () => openModal({ title: 'Checked in', body: '<p>You have been checked in at ' + place + '.</p>', showConfirm: false })
+          });
+        });
+      });
+
+      // Close modal backdrop when clicked outside modal
+      document.getElementById('modal-backdrop').addEventListener('click', function (e) {
+        if (e.target === this) this.style.display = 'none';
+      });
+
+      // Demo "create account" just shows admin add volunteer
+      document.getElementById('demo-create').addEventListener('click', function () {
+        openModal({ title: 'Create Account', body: '<p>This demo does not create real accounts. Use Admin > Volunteers to add volunteers.</p>', showConfirm: false });
+      });
+
+      // Initialize to hide confirm button default state
+      modalConfirm.style.display = 'inline-block';
+    })();
+  </script>
+
+  <!-- External Scripts (in dependency order) -->
+  <script src="runtime-fixes.js"></script>
+  <script src="shared-utils.js"></script>
+  <script src="integration-bridge.js"></script>
+  <script src="localstore.js"></script>
+  <script src="auth.js"></script>
+  <script src="admin-locations.js"></script>
+  <script src="admin-schedules.js"></script>
+  <script src="admin-volunteers.js"></script>
+  <script src="admin-assignments.js"></script>
+  <script src="admin-reports.js"></script>
+  <script src="volunteer-dashboard.js"></script>
+  <script src="elder-dashboard.js"></script>
+  <script src="advanced-features.js"></script>
+</body>
+</html>
